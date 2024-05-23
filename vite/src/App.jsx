@@ -1,10 +1,11 @@
-import { Contract, ethers } from "ethers";
+import { Contract, ethers, formatEther, formatUnits } from "ethers";
 import { useEffect, useState } from "react";
 import abi from "./abi.json";
 
 const App = () => {
   const [signer, setSigner] = useState();
   const [contract, setContract] = useState();
+  const [totalSupply, setTotalSupply] = useState();
 
   const onClickMetamask = async () => {
     try {
@@ -21,6 +22,16 @@ const App = () => {
   const onClickLogOut = () => {
     setSigner(null);
     setContract(null);
+  };
+
+  const onClickTotalSupply = async () => {
+    try {
+      const response = await contract.totalSupply();
+
+      setTotalSupply(response);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   useEffect(() => {
@@ -54,8 +65,18 @@ const App = () => {
         </button>
       )}
       {contract && (
-        <div className="mt-16 flex flex-col gap-8">
+        <div className="mt-16 flex flex-col gap-8 bg-blue-100 grow max-w-md w-full">
           <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
+          <div className="flex">
+            <div className="box-style grow">
+              {totalSupply
+                ? `총 발행량: ${formatEther(totalSupply)}ETH`
+                : "총 발행량 확인"}
+            </div>
+            <button className="button-style ml-4" onClick={onClickTotalSupply}>
+              확인
+            </button>
+          </div>
         </div>
       )}
     </div>
