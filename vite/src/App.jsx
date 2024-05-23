@@ -1,4 +1,4 @@
-import { Contract, ethers, formatEther, formatUnits } from "ethers";
+import { Contract, ethers, formatEther, parseEther } from "ethers";
 import { useEffect, useState } from "react";
 import abi from "./abi.json";
 
@@ -6,6 +6,11 @@ const App = () => {
   const [signer, setSigner] = useState();
   const [contract, setContract] = useState();
   const [totalSupply, setTotalSupply] = useState();
+  const [name, setName] = useState();
+  const [symbol, setSymbol] = useState();
+  const [myBalance, setMyBalance] = useState();
+  const [sendAddress, setSendAddress] = useState("");
+  const [sendToken, setSendToken] = useState("");
 
   const onClickMetamask = async () => {
     try {
@@ -22,6 +27,10 @@ const App = () => {
   const onClickLogOut = () => {
     setSigner(null);
     setContract(null);
+    setTotalSupply(null);
+    setName(null);
+    setMyBalance(null);
+    setSymbol(null);
   };
 
   const onClickTotalSupply = async () => {
@@ -34,15 +43,64 @@ const App = () => {
     }
   };
 
+  const onClickName = async () => {
+    try {
+      const response = await contract.name();
+
+      setName(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickMyBalance = async () => {
+    try {
+      const response = await contract.balanceOf(signer.address);
+
+      setMyBalance(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickSendToken = async () => {
+    try {
+      if (!sendAddress || !sendToken) return;
+
+      const result = await contract.transfer(
+        sendAddress,
+        parseEther(sendToken, "wei")
+      );
+
+      console.log(result);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const getSymbol = async () => {
+    try {
+      const response = await contract.symbol();
+
+      setSymbol(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     if (!signer) return;
 
     setContract(
-      new Contract("0x77D2DAC005A952eF61AbC3D5b460bF60c805E790", abi, signer)
+      new Contract("0x250368BcD73b5B50B8Bdb1F1B3eFa8Bc64F3AEb5", abi, signer)
     );
   }, [signer]);
 
-  useEffect(() => console.log(contract), [contract]);
+  useEffect(() => {
+    if (!contract) return;
+
+    getSymbol();
+  }, [contract]);
 
   return (
     <div className="bg-red-100 min-h-screen flex flex-col justify-start items-center py-16">
@@ -67,15 +125,60 @@ const App = () => {
       {contract && (
         <div className="mt-16 flex flex-col gap-8 bg-blue-100 grow max-w-md w-full">
           <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
-          <div className="flex">
-            <div className="box-style grow">
-              {totalSupply
-                ? `총 발행량: ${formatEther(totalSupply)}ETH`
-                : "총 발행량 확인"}
+          <div className="flex flex-col gap-8">
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {totalSupply
+                  ? `총 발행량: ${formatEther(totalSupply)} ${symbol}`
+                  : "총 발행량 확인"}
+              </div>
+              <button
+                className="button-style ml-4"
+                onClick={onClickTotalSupply}
+              >
+                확인
+              </button>
             </div>
-            <button className="button-style ml-4" onClick={onClickTotalSupply}>
-              확인
-            </button>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {name ? `토큰 이름: ${name}` : "토큰 이름 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickName}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {myBalance
+                  ? `내 보유 토큰: ${formatEther(myBalance)} ${symbol}`
+                  : "내 보유 토큰 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickMyBalance}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full items-end">
+              <div className="flex flex-col gap-2 grow">
+                <div className="ml-1 text-lg font-bold">토큰 전송</div>
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder="지갑 주소"
+                  value={sendAddress}
+                  onChange={(e) => setSendAddress(e.target.value)}
+                />
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder={`${symbol}을 입력하세요.`}
+                  value={sendToken}
+                  onChange={(e) => setSendToken(e.target.value)}
+                />
+              </div>
+              <button className="button-style ml-4" onClick={onClickSendToken}>
+                확인
+              </button>
+            </div>
           </div>
         </div>
       )}
